@@ -6,13 +6,13 @@ import * as O from "../../src/Option"
 
 describe("Chunk", () => {
   it("find & concat", () => {
-    const ca = Chunk.concat_(Chunk.many(4, 5, 6), Chunk.many(1, 2, 3))
+    const ca = Chunk.concat_(Chunk.make(4, 5, 6), Chunk.make(1, 2, 3))
 
     expect(Chunk.find_(ca, (v) => v === 3)).toEqual(O.some(3))
   })
   it("spread", () => {
     const f = (...args: number[]) => args
-    expect(f(...Chunk.many(0, 1, 2))).toEqual([0, 1, 2])
+    expect(f(...Chunk.make(0, 1, 2))).toEqual([0, 1, 2])
   })
   it("append", () => {
     expect(
@@ -23,7 +23,7 @@ describe("Chunk", () => {
         Chunk.append(4),
         Chunk.append(5)
       )
-    ).equals(Chunk.many(1, 2, 3, 4, 5))
+    ).equals(Chunk.make(1, 2, 3, 4, 5))
   })
   it("prepend", () => {
     expect(
@@ -34,17 +34,17 @@ describe("Chunk", () => {
         Chunk.prepend(4),
         Chunk.prepend(5)
       )
-    ).equals(Chunk.many(5, 4, 3, 2, 1))
+    ).equals(Chunk.make(5, 4, 3, 2, 1))
   })
   it("fromArray", () => {
     expect(pipe(Chunk.from([1, 2, 3, 4, 5]), Chunk.append(6), Chunk.append(7))).equals(
-      Chunk.many(1, 2, 3, 4, 5, 6, 7)
+      Chunk.make(1, 2, 3, 4, 5, 6, 7)
     )
   })
   it("concat", () => {
     expect(
       pipe(Chunk.from([1, 2, 3, 4, 5]), Chunk.concat(Chunk.from([6, 7, 8, 9, 10])))
-    ).equals(Chunk.many(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
+    ).equals(Chunk.make(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
   })
   it("iterable", () => {
     expect(Chunk.toArrayLike(Chunk.from([0, 1, 2]))).toEqual(Buffer.of(0, 1, 2))
@@ -88,7 +88,7 @@ describe("Chunk", () => {
         Chunk.concat(Chunk.from([6, 7, 8, 9, 10])),
         Chunk.take(5)
       )
-    ).equals(Chunk.many(1, 2, 3, 4, 5))
+    ).equals(Chunk.make(1, 2, 3, 4, 5))
   })
   it("drop", () => {
     expect(
@@ -97,7 +97,7 @@ describe("Chunk", () => {
         Chunk.concat(Chunk.from([6, 7, 8, 9, 10])),
         Chunk.drop(5)
       )
-    ).equals(Chunk.many(6, 7, 8, 9, 10))
+    ).equals(Chunk.make(6, 7, 8, 9, 10))
   })
   it("map", () => {
     expect(
@@ -119,16 +119,16 @@ describe("Chunk", () => {
       )
     ).toEqual(Buffer.from("hello-|-world"))
   })
-  it("collectM", async () => {
+  it("collectEffect", async () => {
     const result = await pipe(
       Chunk.single(0),
       Chunk.append(1),
       Chunk.append(2),
       Chunk.append(3),
-      Chunk.collectM((n) => (n >= 2 ? O.some(T.succeed(n)) : O.none)),
+      Chunk.collectEffect((n) => (n >= 2 ? O.some(T.succeed(n)) : O.none)),
       T.runPromise
     )
-    expect(result).equals(Chunk.many(2, 3))
+    expect(result).equals(Chunk.make(2, 3))
   })
   it("arrayLikeIterator", () => {
     const it = pipe(
@@ -174,7 +174,7 @@ describe("Chunk", () => {
       )
     ).equals(Chunk.from([2, 3, 4]))
   })
-  it("dropWhileM", async () => {
+  it("dropWhileEffect", async () => {
     expect(
       await pipe(
         Chunk.single(0),
@@ -182,7 +182,7 @@ describe("Chunk", () => {
         Chunk.append(2),
         Chunk.append(3),
         Chunk.append(4),
-        Chunk.dropWhileM((n) => T.delay(1)(T.succeed(n < 2))),
+        Chunk.dropWhileEffect((n) => T.delay(1)(T.succeed(n < 2))),
         T.runPromise
       )
     ).equals(Chunk.from([2, 3, 4]))
@@ -199,7 +199,7 @@ describe("Chunk", () => {
       )
     ).equals(Chunk.from([2, 3, 4]))
   })
-  it("filterM", async () => {
+  it("filterEffect", async () => {
     expect(
       await pipe(
         Chunk.single(0),
@@ -207,7 +207,7 @@ describe("Chunk", () => {
         Chunk.append(2),
         Chunk.append(3),
         Chunk.append(4),
-        Chunk.filterM((n) => T.delay(1)(T.succeed(n >= 2))),
+        Chunk.filterEffect((n) => T.delay(1)(T.succeed(n >= 2))),
         T.runPromise
       )
     ).equals(Chunk.from([2, 3, 4]))
@@ -256,7 +256,7 @@ describe("Chunk", () => {
       )
     ).toEqual(O.none)
   })
-  it("reduceM", async () => {
+  it("reduceEffect", async () => {
     const order = [] as number[]
     expect(
       await pipe(
@@ -265,7 +265,7 @@ describe("Chunk", () => {
         Chunk.append(2),
         Chunk.append(3),
         Chunk.append(4),
-        Chunk.reduceM(0, (s, a) =>
+        Chunk.reduceEffect(0, (s, a) =>
           T.succeedWith(() => {
             order.push(a)
             return s + a
@@ -276,7 +276,7 @@ describe("Chunk", () => {
     ).toEqual(10)
     expect(order).toEqual([0, 1, 2, 3, 4])
   })
-  it("reduceRightM", async () => {
+  it("reduceRightEffect", async () => {
     const order = [] as number[]
     expect(
       await pipe(
@@ -285,7 +285,7 @@ describe("Chunk", () => {
         Chunk.append(2),
         Chunk.append(3),
         Chunk.append(4),
-        Chunk.reduceRightM(0, (a, s) =>
+        Chunk.reduceRightEffect(0, (a, s) =>
           T.succeedWith(() => {
             order.push(a)
             return s + a
@@ -320,7 +320,7 @@ describe("Chunk", () => {
         Chunk.append(5),
         Chunk.split(2)
       )
-    ).equals(Chunk.many(Chunk.from([0, 1, 2]), Chunk.from([3, 4, 5])))
+    ).equals(Chunk.make(Chunk.from([0, 1, 2]), Chunk.from([3, 4, 5])))
 
     expect(
       pipe(
@@ -333,7 +333,7 @@ describe("Chunk", () => {
         Chunk.split(4)
       )
     ).equals(
-      Chunk.many(Chunk.many(0, 1), Chunk.many(2, 3), Chunk.single(4), Chunk.single(5))
+      Chunk.make(Chunk.make(0, 1), Chunk.make(2, 3), Chunk.single(4), Chunk.single(5))
     )
 
     expect(
@@ -347,12 +347,12 @@ describe("Chunk", () => {
         Chunk.split(5)
       )
     ).equals(
-      Chunk.many(
-        Chunk.many(0, 1),
-        Chunk.many(2),
-        Chunk.many(3),
-        Chunk.many(4),
-        Chunk.many(5)
+      Chunk.make(
+        Chunk.make(0, 1),
+        Chunk.make(2),
+        Chunk.make(3),
+        Chunk.make(4),
+        Chunk.make(5)
       )
     )
 
@@ -368,12 +368,12 @@ describe("Chunk", () => {
         Chunk.split(5)
       )
     ).equals(
-      Chunk.many(
-        Chunk.many(0, 1),
-        Chunk.many(2, 3),
-        Chunk.many(4),
-        Chunk.many(5),
-        Chunk.many(6)
+      Chunk.make(
+        Chunk.make(0, 1),
+        Chunk.make(2, 3),
+        Chunk.make(4),
+        Chunk.make(5),
+        Chunk.make(6)
       )
     )
   })
@@ -456,7 +456,7 @@ describe("Chunk", () => {
         Chunk.append(4),
         Chunk.zipWithIndex
       )
-    ).equals(Chunk.many(Tp.tuple(1, 0), Tp.tuple(2, 1), Tp.tuple(3, 2), Tp.tuple(4, 3)))
+    ).equals(Chunk.make(Tp.tuple(1, 0), Tp.tuple(2, 1), Tp.tuple(3, 2), Tp.tuple(4, 3)))
   })
   it("fill", () => {
     expect(Chunk.fill(10, (n) => n + 1)).equals(
@@ -464,7 +464,7 @@ describe("Chunk", () => {
     )
   })
   it("equality", () => {
-    expect(Chunk.many(0, 1, 2)).equals(Chunk.from([0, 1, 2]))
+    expect(Chunk.make(0, 1, 2)).equals(Chunk.from([0, 1, 2]))
   })
 
   it("findM found", async () => {
@@ -472,7 +472,7 @@ describe("Chunk", () => {
 
     const result = await pipe(
       T.fold_(
-        Chunk.findM_(chunk, (a) => T.succeed(a === 3)),
+        Chunk.findEffect_(chunk, (a) => T.succeed(a === 3)),
         () => -1,
         O.fold(
           () => -1,
@@ -490,7 +490,7 @@ describe("Chunk", () => {
 
     const result = await pipe(
       T.fold_(
-        Chunk.findM_(chunk, (a) => T.succeed(a === 20)),
+        Chunk.findEffect_(chunk, (a) => T.succeed(a === 20)),
         () => -1,
         O.fold(
           () => 42,
@@ -507,7 +507,7 @@ describe("Chunk", () => {
     const chunk = Chunk.from([1, 2, 3, 4])
 
     const result = await pipe(
-      Chunk.findM_(chunk, (a) => T.fail({ _tag: "Error" } as const)),
+      Chunk.findEffect_(chunk, (a) => T.fail({ _tag: "Error" } as const)),
       T.runPromiseExit
     )
 
@@ -516,7 +516,7 @@ describe("Chunk", () => {
 
   it("dedupe", async () => {
     expect(
-      Chunk.dedupe(Chunk.many(0, 0, 1, 2, 3, 4, 4, 5, 6, 7, 7, 7, 8, 9, 9, 9, 9))
+      Chunk.dedupe(Chunk.make(0, 0, 1, 2, 3, 4, 4, 5, 6, 7, 7, 7, 8, 9, 9, 9, 9))
     ).equals(Chunk.range(0, 9))
   })
 })
